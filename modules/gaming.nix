@@ -14,7 +14,12 @@ in
 {
   programs.steam = {
     enable = true;
-    gamescopeSession.enable = true;       # SteamOS-style session selectable at login
+    gamescopeSession = {
+      enable = true;                      # SteamOS-style session selectable at login
+      # SteamOS mode (as on the Deck): the only mode where "Switch to Desktop" calls
+      # steamos-session-select. Plain -tenfoot ignores it and just restarts Steam.
+      steamArgs = [ "-gamepadui" "-steamos3" "-pipewire-dmabuf" ];
+    };
     remotePlay.openFirewall = true;
     localNetworkGameTransfers.openFirewall = true;
     dedicatedServer.openFirewall = true;
