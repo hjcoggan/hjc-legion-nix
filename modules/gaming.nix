@@ -1,5 +1,15 @@
 { pkgs, ... }:
 
+let
+  # Big Picture's "Switch to Desktop" runs `steamos-session-select`. NixOS doesn't ship it, so
+  # Steam just restarts in a loop. This version shuts Steam down and ends the session, which
+  # drops you back at the login screen to pick Niri or Plasma.
+  steamos-session-select = pkgs.writeShellScriptBin "steamos-session-select" ''
+    steam -shutdown || true
+    sleep 3
+    ${pkgs.systemd}/bin/loginctl terminate-session "''${XDG_SESSION_ID:-self}"
+  '';
+in
 # Aim: SteamOS-like experience. You also get a "Steam Big Picture (gamescope)" session at the login screen.
 {
   programs.steam = {
@@ -11,6 +21,7 @@
     protontricks.enable = true;
     extest.enable = true;                 # Steam Input for controllers under Wayland
     extraCompatPackages = [ pkgs.proton-ge-bin ];
+    extraPackages = [ steamos-session-select ]; # visible inside Steam's FHS environment
   };
 
   programs.gamescope = {
