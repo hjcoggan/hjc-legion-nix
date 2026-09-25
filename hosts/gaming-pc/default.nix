@@ -10,6 +10,7 @@
     ../../modules/gaming.nix
     ../../modules/apps.nix
     ../../modules/software.nix
+    ../../modules/vpn.nix
   ];
 
   # btrfs (subvolumes @, @home, @nix, @log). These options merge with hardware-configuration.nix.

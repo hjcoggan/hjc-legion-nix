@@ -27,12 +27,6 @@
   hardware.enableAllFirmware = true;
   environment.sessionVariables.GST_PLUGIN_SYSTEM_PATH_1_0 = "/run/current-system/sw/lib/gstreamer-1.0";
 
-  # ── VPN: Windscribe (no Linux package in nixpkgs/Flathub) ──
-  # Download WireGuard or OpenVPN configs from windscribe.com → Config Generators,
-  # then import them in the network settings (KDE or `nmcli connection import`).
-  networking.networkmanager.plugins = [ pkgs.networkmanager-openvpn ];
-  networking.firewall.checkReversePath = "loose"; # needed for WireGuard
-
   # ── Extra gaming tools (picked from Bazzite / Nobara) ──
   services.hardware.openrgb.enable = true;        # RGB control (Nobara)
   services.input-remapper.enable = true;          # remap mice/keyboards/pads (Bazzite)
@@ -67,9 +61,6 @@
     gst_all_1.gst-plugins-ugly
     gst_all_1.gst-libav
     libva-utils
-
-    # VPN
-    wireguard-tools
 
     # Bazzite / Nobara extras
     protonplus           # Proton-GE/Wine-GE manager (Bazzite; alongside ProtonUp-Qt)
