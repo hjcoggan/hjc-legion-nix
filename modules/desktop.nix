@@ -31,6 +31,8 @@ in
       wayland.enable = true;
       theme = "where_is_my_sddm_theme";
       extraPackages = [ loginTheme ];
+      # Always preselect Niri (defaultSession) instead of whatever was used last, e.g. Big Picture
+      settings.Users.RememberLastSession = false;
     };
   };
   environment.systemPackages = [ loginTheme ] ++ (with pkgs; [
