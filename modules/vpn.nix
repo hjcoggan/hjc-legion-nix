@@ -5,6 +5,12 @@
 {
   imports = [ inputs.windscribe-nixos.nixosModules.windscribe ];
 
+  # Pre-built Windscribe from the maintainer's cache (skips the long source build)
+  nix.settings = {
+    substituters = [ "https://varmisanth.cachix.org" ];
+    trusted-public-keys = [ "varmisanth.cachix.org-1:rt04yjDDJKDWe+h6B1XQWfdsSDUX6uks+9IKVBjn2d8=" ];
+  };
+
   programs.windscribe = {
     enable = true;
     users = [ "heath" ];

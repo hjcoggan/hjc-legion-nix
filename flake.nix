@@ -9,10 +9,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    windscribe-nixos = {
-      url = "github:Varmisanth/windscribe-nixos";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    # No `follows` on purpose: uses its own pinned nixpkgs so it matches the
+    # maintainer's binary cache and only rebuilds when Windscribe itself updates.
+    windscribe-nixos.url = "github:Varmisanth/windscribe-nixos";
 
     noctalia = {
       url = "github:noctalia-dev/noctalia";
