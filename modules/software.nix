@@ -10,7 +10,11 @@
     after = [ "network-online.target" ];
     path = [ pkgs.flatpak ];
     serviceConfig.Type = "oneshot";
-    script = "flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo";
+    script = ''
+      flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+      # Flatseal (Flatpak permissions) isn't in nixpkgs, so install it from Flathub
+      flatpak install -y --noninteractive flathub com.github.tchx84.Flatseal || true
+    '';
   };
 
   # ── AppImages: run them natively (binfmt) so Gear Lever and double-click both work ──
