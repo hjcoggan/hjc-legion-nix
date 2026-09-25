@@ -1,4 +1,4 @@
-{ inputs, lib, ... }:
+{ inputs, lib, pkgs, ... }:
 
 # Windscribe desktop app (GUI), built from Windscribe's official source by
 # https://github.com/Varmisanth/windscribe-nixos. Pinned in flake.lock; updates with `nix flake update`.
@@ -29,4 +29,20 @@
   # NetworkManager switches to resolved automatically when this is on.
   services.resolved.enable = true;
   programs.windscribe.settings.dnsManager = "systemd-resolved";
+
+  # The helper hard-resets PATH to /usr/sbin:/usr/bin:/sbin:/bin (src/helper/linux/main.cpp),
+  # which is empty on NixOS, so WireGuard setup (ip, modprobe, ...) fails with error 9.
+  # Give the helper, and only the helper, a private /usr/bin + /usr/sbin with its tools.
+  systemd.services.windscribe-helper.serviceConfig.BindReadOnlyPaths =
+    let
+      tools = pkgs.buildEnv {
+        name = "windscribe-helper-tools";
+        paths = with pkgs; [
+          bash coreutils ethtool gawk gnugrep gnused iproute2 iptables nftables
+          iw kmod procps util-linux systemd networkmanager wireguard-tools
+        ];
+        pathsToLink = [ "/bin" "/sbin" ];
+        ignoreCollisions = true; # e.g. `kill` is in both procps and util-linux
+      };
+    in [ "${tools}/bin:/usr/bin" "${tools}/bin:/usr/sbin" ];
 }
