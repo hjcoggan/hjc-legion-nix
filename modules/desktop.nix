@@ -1,20 +1,35 @@
 { pkgs, inputs, ... }:
 
 let
-  loginTheme = pkgs.sddm-astronaut.override {
-    embeddedTheme = "purple_leaves"; # other options: astronaut, black_hole, cyberpunk, jake_the_dog, japanese_aesthetic, pixel_sakura, ...
+  # Minimal login: black screen, a password field, and the session name underneath.
+  # The session name under the password field switches Niri / Plasma / Steam Big Picture (F1 shows help).
+  loginTheme = pkgs.where-is-my-sddm-theme.override {
+    themeConfig.General = {
+      backgroundFill = "#000000";
+      basicTextColor = "#e6e6e6";
+      font = "JetBrainsMono Nerd Font";
+      helpFont = "JetBrainsMono Nerd Font";
+      helpFontSize = 12;
+      passwordFontSize = 28;
+      passwordInputWidth = 0.25;
+      passwordInputRadius = 8;
+      passwordCursorColor = "#e6e6e6";
+      passwordCharacter = "•";
+      showSessionsByDefault = true;
+      sessionsFontSize = 14;
+      showUsersByDefault = false;
+    };
   };
 in
 {
   imports = [ inputs.noctalia.nixosModules.default ];
 
-  # ── Login screen: SDDM + Astronaut theme. Pick "Niri" or "Plasma (Wayland)" from the session menu. ──
   services.displayManager = {
     defaultSession = "niri";
     sddm = {
       enable = true;
       wayland.enable = true;
-      theme = "sddm-astronaut-theme";
+      theme = "where_is_my_sddm_theme";
       extraPackages = [ loginTheme ];
     };
   };

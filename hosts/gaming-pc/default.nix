@@ -12,6 +12,15 @@
     ../../modules/software.nix
   ];
 
+  # btrfs (subvolumes @, @home, @nix, @log). These options merge with hardware-configuration.nix.
+  fileSystems = {
+    "/".options = [ "compress=zstd" "noatime" ];
+    "/home".options = [ "compress=zstd" "noatime" ];
+    "/nix".options = [ "compress=zstd" "noatime" ];
+    "/var/log".options = [ "compress=zstd" "noatime" ];
+  };
+  services.btrfs.autoScrub.enable = true;
+
   networking.hostName = "gaming-pc";
   time.timeZone = "America/New_York"; # TODO: change if needed
 
