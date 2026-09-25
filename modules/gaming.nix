@@ -35,14 +35,23 @@ in
     extraPackages = [ steamos-session-select ]; # visible inside Steam's FHS environment
   };
 
-  # Runs outside Steam's sandbox: ends the Big Picture session so SDDM comes back.
-  # The session owner may terminate their own session without a polkit prompt.
+  # Runs outside Steam's sandbox. Graceful first: Steam shuts down, gamescope exits on its own
+  # and the session ends like a normal logout. Force-killing everything at once raced SDDM's
+  # greeter for the display (black screen with a cursor), so terminate-session is only a fallback.
   systemd.user.services."steam-exit-to-login@" = {
     description = "End Steam Big Picture session %i and return to the login screen";
-    serviceConfig = {
-      Type = "oneshot";
-      ExecStart = "${pkgs.systemd}/bin/loginctl --no-ask-password terminate-session %i";
-    };
+    path = [ pkgs.procps pkgs.systemd "/run/current-system/sw" ];
+    script = ''
+      steam -shutdown || true
+      for _ in $(seq 20); do
+        pgrep -u "$(id -u)" -f gamescope >/dev/null || exit 0
+        sleep 1
+      done
+      echo "Steam did not exit in 20s; ending session $1"
+      loginctl --no-ask-password terminate-session "$1"
+    '';
+    scriptArgs = "%i";
+    serviceConfig.Type = "oneshot";
   };
 
   programs.gamescope = {
