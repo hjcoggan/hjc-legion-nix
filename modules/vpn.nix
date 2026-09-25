@@ -1,4 +1,4 @@
-{ inputs, ... }:
+{ inputs, lib, ... }:
 
 # Windscribe desktop app (GUI), built from Windscribe's official source by
 # https://github.com/Varmisanth/windscribe-nixos. Pinned in flake.lock; updates with `nix flake update`.
@@ -10,6 +10,12 @@
     substituters = [ "https://varmisanth.cachix.org" ];
     trusted-public-keys = [ "varmisanth.cachix.org-1:rt04yjDDJKDWe+h6B1XQWfdsSDUX6uks+9IKVBjn2d8=" ];
   };
+
+  # Their module builds Windscribe against *our* nixpkgs, which would rebuild it on every
+  # system update. Use their own package instead (their nixpkgs pin = what the cache has).
+  nixpkgs.overlays = lib.mkAfter [
+    (final: prev: { windscribe = inputs.windscribe-nixos.packages.${prev.stdenv.hostPlatform.system}.windscribe; })
+  ];
 
   programs.windscribe = {
     enable = true;
