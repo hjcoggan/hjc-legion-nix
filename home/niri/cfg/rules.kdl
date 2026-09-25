@@ -1,0 +1,26 @@
+    window-rule {
+        geometry-corner-radius 20 // Set every window radius to 20
+        clip-to-geometry true
+    }
+
+    layer-rule {
+        match namespace="^noctalia-wallpaper*"
+        place-within-backdrop true
+    }
+
+// ────────────── Steam / gaming (added for NixOS) ──────────────
+    // Steam's notification toasts: float them bottom-right instead of tiling.
+    window-rule {
+        match app-id="steam" title=r#"^notificationtoasts_\d+_desktop$"#
+        default-floating-position x=10 y=10 relative-to="bottom-right"
+        open-focused false
+    }
+
+    // Games (Steam app IDs and gamescope) open fullscreen, square corners, no VRR flicker.
+    window-rule {
+        match app-id=r#"^steam_app_\d+$"#
+        match app-id="gamescope"
+        open-fullscreen true
+        geometry-corner-radius 0
+        variable-refresh-rate true
+    }
