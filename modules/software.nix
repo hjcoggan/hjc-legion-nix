@@ -13,6 +13,12 @@
     script = "flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo";
   };
 
+  # ── AppImages: run them natively (binfmt) so Gear Lever and double-click both work ──
+  programs.appimage = {
+    enable = true;
+    binfmt = true;
+  };
+
   # ── Media codecs & non-free firmware ──
   hardware.enableAllFirmware = true;
   environment.sessionVariables.GST_PLUGIN_SYSTEM_PATH_1_0 = "/run/current-system/sw/lib/gstreamer-1.0";
@@ -36,6 +42,7 @@
     # App store / Flatpak management
     bazaar
     flatseal
+    gearlever            # AppImage manager: integrates into app menu, handles updates
 
     # Browsers
     ungoogled-chromium
