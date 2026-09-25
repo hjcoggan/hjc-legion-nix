@@ -4,17 +4,16 @@ let
   # Big Picture's "Switch to Desktop" runs `steamos-session-select`. NixOS doesn't ship it, so
   # Steam just restarts in a loop. This version shuts Steam down and ends the session, which
   # drops you back at the login screen to pick Niri or Plasma.
-  # Ending the session sends Steam SIGTERM, which it handles as a normal shutdown.
+  # Steam runs this inside its bubblewrap sandbox, where loginctl stalls. So it only asks the
+  # (unsandboxed) systemd user manager to end the session via steam-exit-to-login@<id>.
   # Logs to ~/.cache/steamos-session-select.log for troubleshooting.
   steamos-session-select = pkgs.writeShellScriptBin "steamos-session-select" ''
+    unset LD_PRELOAD
     log="$HOME/.cache/steamos-session-select.log"
     echo "$(date) called with: $* (XDG_SESSION_ID=''${XDG_SESSION_ID:-unset})" >> "$log"
-    if ${pkgs.systemd}/bin/loginctl terminate-session "''${XDG_SESSION_ID:-self}" >> "$log" 2>&1; then
-      echo "terminate-session ok" >> "$log"
-    else
-      echo "terminate-session failed; stopping gamescope instead" >> "$log"
-      ${pkgs.procps}/bin/pkill -TERM -u "$(id -u)" -f 'gamescope' >> "$log" 2>&1
-    fi
+    ${pkgs.systemd}/bin/systemctl --user start --no-block "steam-exit-to-login@''${XDG_SESSION_ID}.service" >> "$log" 2>&1 \
+      && echo "requested logout" >> "$log" \
+      || echo "systemctl --user failed" >> "$log"
   '';
 in
 # Aim: SteamOS-like experience. You also get a "Steam Big Picture (gamescope)" session at the login screen.
@@ -34,6 +33,16 @@ in
     extest.enable = true;                 # Steam Input for controllers under Wayland
     extraCompatPackages = [ pkgs.proton-ge-bin ];
     extraPackages = [ steamos-session-select ]; # visible inside Steam's FHS environment
+  };
+
+  # Runs outside Steam's sandbox: ends the Big Picture session so SDDM comes back.
+  # The session owner may terminate their own session without a polkit prompt.
+  systemd.user.services."steam-exit-to-login@" = {
+    description = "End Steam Big Picture session %i and return to the login screen";
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.systemd}/bin/loginctl --no-ask-password terminate-session %i";
+    };
   };
 
   programs.gamescope = {
