@@ -23,4 +23,10 @@
   };
 
   networking.firewall.checkReversePath = "loose"; # needed for WireGuard
+
+  # Windscribe sets tunnel DNS through systemd-resolved (resolvectl). Without it every
+  # connection fails with "Could not activate remote peer org.freedesktop.resolve1".
+  # NetworkManager switches to resolved automatically when this is on.
+  services.resolved.enable = true;
+  programs.windscribe.settings.dnsManager = "systemd-resolved";
 }
