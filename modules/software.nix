@@ -41,7 +41,6 @@
   environment.systemPackages = with pkgs; [
     # App store / Flatpak management
     bazaar
-    flatseal
     gearlever            # AppImage manager: integrates into app menu, handles updates
 
     # Browsers
@@ -63,7 +62,6 @@
     gst_all_1.gst-plugins-bad
     gst_all_1.gst-plugins-ugly
     gst_all_1.gst-libav
-    gst_all_1.gst-vaapi
     libva-utils
 
     # VPN
@@ -72,7 +70,7 @@
     # Bazzite / Nobara extras
     protonplus           # Proton-GE/Wine-GE manager (Bazzite; alongside ProtonUp-Qt)
     lutris               # (Nobara, Bazzite)
-    wineWowPackages.stagingFull
+    wineWow64Packages.stagingFull
     winetricks
     vkbasalt             # post-processing (sharpening etc.)
     distrobox            # run other distros' packages (Bazzite)
