@@ -23,7 +23,10 @@
     settings.general.renice = 10;
   };
 
-  hardware.steam-hardware.enable = true;  # Steam Controller / Index / Deck udev rules
+  # ── Steam Controller (original + 2026 model), Deck, Index, and other pads ──
+  hardware.steam-hardware.enable = true;  # Valve udev rules (Steam Controller, Index, Deck)
+  hardware.uinput.enable = true;          # lets Steam Input create virtual gamepads
+  services.udev.packages = [ pkgs.game-devices-udev-rules ]; # PS/Switch/8BitDo etc.
   hardware.xone.enable = true;            # Xbox wireless dongle
   services.ananicy = {
     enable = true;

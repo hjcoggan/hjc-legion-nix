@@ -9,6 +9,7 @@
     ../../modules/desktop.nix
     ../../modules/gaming.nix
     ../../modules/apps.nix
+    ../../modules/software.nix
   ];
 
   networking.hostName = "gaming-pc";

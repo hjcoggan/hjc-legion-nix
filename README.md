@@ -7,7 +7,10 @@ NixOS flake for my gaming PC — Ryzen 7 7700 + Radeon RX 9070 XT.
 - **Steam Big Picture (gamescope)** session for a SteamOS-like couch experience
 - SDDM login screen (Astronaut theme) to switch between them
 - Steam + Proton-GE, gamemode, gamescope, MangoHud, LACT, ananicy-cpp (CachyOS rules)
-- Apps: Firefox, Opencode, Faugus Launcher, ProtonUp-Qt, Heroic
+- Apps: Firefox, Ungoogled Chromium, Opencode, Faugus Launcher, ProtonUp-Qt, ProtonPlus, Heroic, Lutris, Celluloid + mpv, Fedora Media Writer, OBS
+- Flatpak + Flathub with the Bazaar store
+- Full media codecs (ffmpeg, GStreamer) and non-free firmware
+- Windscribe via WireGuard/OpenVPN configs in NetworkManager
 - USB/external drives automount (udisks2 + udiskie in niri; Plasma native)
 
 ## Layout
