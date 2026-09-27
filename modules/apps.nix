@@ -5,7 +5,7 @@
   programs.partition-manager.enable = true; # KDE Partition Manager (+ its privileged helper)
 
   environment.systemPackages = with pkgs; [
-    opencode
+    claude-code       # Claude Code (uses your Claude subscription: run `claude` and log in)
     faugus-launcher
     protonup-qt
     heroic
