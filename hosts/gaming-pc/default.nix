@@ -12,6 +12,7 @@
     ../../modules/software.nix
     ../../modules/vpn.nix
     ../../modules/samba.nix
+    ../../modules/llm.nix
   ];
 
   # btrfs (subvolumes @, @home, @nix, @log). These options merge with hardware-configuration.nix.
