@@ -15,17 +15,16 @@
     tray = "auto";
   };
 
-  # OpenCode: local coding agent using Ollama models (see modules/llm.nix). Switch with /models.
+  # OpenCode: local coding agent using Qwen3.6 from Ollama (see modules/llm.nix)
   programs.opencode = {
     enable = true;
     settings = {
-      model = "ollama/gpt-oss:20b";
+      model = "ollama/qwen3.6:35b-a3b";
       provider.ollama = {
         npm = "@ai-sdk/openai-compatible";
         name = "Ollama (local)";
         options.baseURL = "http://127.0.0.1:11434/v1";
-        models."gpt-oss:20b".name = "gpt-oss 20B (fast, fits in VRAM)";
-        models."qwen3.6:35b-a3b".name = "Qwen3.6 35B-A3B (stronger, partly on CPU)";
+        models."qwen3.6:35b-a3b".name = "Qwen3.6 35B-A3B";
       };
       autoupdate = false;
     };
