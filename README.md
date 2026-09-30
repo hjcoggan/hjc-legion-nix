@@ -10,6 +10,7 @@ NixOS flake for my gaming PC — Ryzen 7 7700 + Radeon RX 9070 XT.
 - Apps: Firefox, Ungoogled Chromium, Claude Code, OpenCode, Faugus Launcher, ProtonUp-Qt, ProtonPlus, Heroic, Lutris, Celluloid + mpv, Fedora Media Writer, OBS
 - Flatpak + Flathub with the Bazaar store
 - Full media codecs (ffmpeg, GStreamer) and non-free firmware
+- Jellyfin media server, libraries on the external PSSD T7 drive
 - Windscribe VPN desktop app (via windscribe-nixos)
 - USB/external drives automount (udisks2 + udiskie in niri; Plasma native)
 
