@@ -11,7 +11,9 @@
   hardware.enableAllFirmware = true; # Wi-Fi, Bluetooth and audio DSP firmware
   hardware.firmware = [ pkgs.sof-firmware ];
 
-  hardware.amdgpu.initrd.enable = true; # native panel resolution from the first frame
+  # Jovian: early amdgpu modesetting (native panel resolution from the first frame) and
+  # write access to the backlight, which is what makes Steam's brightness slider work.
+  jovian.hardware.has.amd.gpu = true;
   hardware.graphics = {
     enable = true;
     enable32Bit = true;

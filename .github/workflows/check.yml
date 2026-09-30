@@ -1,0 +1,73 @@
+name: check
+
+# Evaluates the Legion Go S system on GitHub's machines, since it can't be evaluated on a Mac.
+# Catches wrong option names, conflicting settings, failed assertions and broken scripts before
+# they reach the device. Nothing is built or deployed.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          nix_path: nixpkgs=channel:nixos-unstable
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      # hardware-configuration.nix is generated on the device at install time. Use a stand-in so
+      # the rest of the system can be evaluated here.
+      - name: Stand-in hardware configuration
+        run: |
+          [ -e hosts/legion-go-s/hardware-configuration.nix ] || cat > hosts/legion-go-s/hardware-configuration.nix <<'NIX'
+          { ... }:
+          {
+            nixpkgs.hostPlatform = "x86_64-linux";
+            boot.initrd.availableKernelModules = [ "nvme" "xhci_pci" "usbhid" ];
+            fileSystems."/" = { device = "/dev/disk/by-label/nixos"; fsType = "btrfs"; options = [ "subvol=@" ]; };
+            fileSystems."/home" = { device = "/dev/disk/by-label/nixos"; fsType = "btrfs"; options = [ "subvol=@home" ]; };
+            fileSystems."/nix" = { device = "/dev/disk/by-label/nixos"; fsType = "btrfs"; options = [ "subvol=@nix" ]; };
+            fileSystems."/var/log" = { device = "/dev/disk/by-label/nixos"; fsType = "btrfs"; options = [ "subvol=@log" ]; };
+            fileSystems."/boot" = { device = "/dev/disk/by-label/BOOT"; fsType = "vfat"; };
+          }
+          NIX
+          git add -A # flakes only see files git knows about
+
+      - name: Evaluate the system
+        run: nix eval --raw .#nixosConfigurations.legion-go-s.config.system.build.toplevel.drvPath
+
+      - name: What would have to be built (vs downloaded)
+        run: nix build --dry-run .#nixosConfigurations.legion-go-s.config.system.build.toplevel 2>&1 | tail -150
+
+      - name: Test the Steam shortcuts script
+        run: |
+          export HOME="$(mktemp -d)"
+          cfg="$HOME/.local/share/Steam/userdata/12345/config"
+          mkdir -p "$cfg"
+          cat > "$RUNNER_TEMP/sc.json" <<'JSON'
+          [{"name":"Update System","exe":"/run/current-system/sw/bin/hjc-update"},
+           {"name":"Firefox","exe":"/run/current-system/sw/bin/firefox"}]
+          JSON
+          run() { nix-shell -p 'python3.withPackages (ps: [ ps.vdf ])' --run "python3 $GITHUB_WORKSPACE/modules/steam-shortcuts.py $RUNNER_TEMP/sc.json"; }
+          echo "--- first run: creates the file"; run
+          echo "--- second run: must change nothing"; before=$(sha256sum "$cfg/shortcuts.vdf"); run; [ "$before" = "$(sha256sum "$cfg/shortcuts.vdf")" ]
+          echo "--- pre-existing entry named Firefox must be kept, others added"
+          rm "$cfg/shortcuts.vdf"
+          nix-shell -p 'python3.withPackages (ps: [ ps.vdf ])' --run "python3 -c \"
+          import vdf
+          d = {'shortcuts': {'0': {'appid': -1, 'AppName': 'Firefox', 'Exe': '\\\"/mine\\\"'}}}
+          open('$cfg/shortcuts.vdf', 'wb').write(vdf.binary_dumps(d))\""
+          run
+          nix-shell -p 'python3.withPackages (ps: [ ps.vdf ])' --run "python3 -c \"
+          import vdf
+          d = vdf.binary_load(open('$cfg/shortcuts.vdf', 'rb'))
+          names = [e['AppName'] for e in d['shortcuts'].values()]
+          print(names)
+          assert names == ['Firefox', 'Update System'], names
+          assert d['shortcuts']['0']['Exe'] == '\\\"/mine\\\"'\""

@@ -110,7 +110,8 @@ in
       as_user() { runuser -u ${user} -- env HOME=/home/${user} "$@"; }
 
       echo "Fetching the latest settings from GitHub..."
-      as_user git checkout HEAD -- flake.lock || true
+      # Drop local lock changes so the pull can't conflict (a lock git doesn't know yet is simply regenerated)
+      as_user git checkout HEAD -- flake.lock 2>/dev/null || rm -f flake.lock
       as_user git pull --ff-only || echo "Could not reach GitHub; using the settings already on this device."
 
       echo "Checking for newer packages..."
