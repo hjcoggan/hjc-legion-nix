@@ -6,8 +6,8 @@
 {
   jovian.steam = {
     enable = true;
-    # autoStart also wires up Jovian's session switching ("Switch to Desktop" inside Steam).
-    # The automatic login it normally adds is turned off in desktop.nix: we keep the login screen.
+    # Boot straight into Steam (automatic login, no password) and enable Jovian's session
+    # switching ("Switch to Desktop" inside Steam).
     autoStart = true;
     user = "heath";
     # "Switch to Desktop" in Steam's power menu opens Plasma Bigscreen.

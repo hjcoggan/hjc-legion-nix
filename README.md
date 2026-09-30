@@ -6,7 +6,7 @@ Touch-friendly, SteamOS-like NixOS for the **Lenovo Legion Go S** (Ryzen Z2 Go).
 - **Steam Big Picture in SteamOS mode** (Steam Deck UI on gamescope, via
   [Jovian-NixOS](https://jovian-experiments.github.io/Jovian-NixOS/)). Always the default.
 - **KDE Plasma Bigscreen** as the second environment. "Switch to Desktop" in Steam opens it.
-- **Touch login screen** (SDDM, on-screen keyboard) at every boot to pick between the two.
+- **No login screen**: it boots straight into Steam. "Return to Gaming Mode" (an app in Bigscreen) or logging out brings Steam back.
 - **Update System**: a one-tap updater with a big progress dialog. In Plasma Bigscreen it is an
   app; in Steam it is a shortcut in the library (added automatically once you have signed in).
 - Hardware: newest kernel (Go S controller drivers), InputPlumber for controllers / back buttons /
@@ -20,7 +20,7 @@ flake.nix                  inputs: nixpkgs-unstable, jovian
 hosts/legion-go-s/         host settings (+ hardware-configuration.nix generated at install)
 modules/base.nix           nix, boot, networking, audio, git
 modules/hardware.nix       Legion Go S hardware support
-modules/desktop.nix        touch login screen + Steam / Plasma Bigscreen sessions
+modules/desktop.nix        Plasma Bigscreen + "Return to Gaming Mode"
 modules/gaming.nix         Steam Deck UI (Jovian), Proton-GE, automount
 modules/apps.nix           apps
 modules/update.nix         "Update System" app, updater service, Steam shortcuts
