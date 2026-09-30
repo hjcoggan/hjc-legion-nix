@@ -13,6 +13,13 @@
     # maintainer's binary cache and only rebuilds when Windscribe itself updates.
     windscribe-nixos.url = "github:Varmisanth/windscribe-nixos";
 
+    # Claude Code from its own flake: updated within about a day of each release, while
+    # nixpkgs lags a few days. Update just this with: nix flake update claude-code
+    claude-code = {
+      url = "github:sadjow/claude-code-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     noctalia = {
       url = "github:noctalia-dev/noctalia";
       inputs.nixpkgs.follows = "nixpkgs";
