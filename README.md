@@ -1,37 +1,37 @@
-# hjcoggan-nix
+# hjc-legion-nix
 
-NixOS flake for my gaming PC — Ryzen 7 7700 + Radeon RX 9070 XT.
+Touch-friendly, SteamOS-like NixOS for the **Lenovo Legion Go S** (Ryzen Z2 Go). Based on
+[hjcoggan-nix](https://github.com/hjcoggan/hjcoggan-nix) (the gaming PC config).
 
-- **Niri** (primary) with **Noctalia** shell, config based on CachyOS's niri settings
-- **KDE Plasma 6** as a backup session
-- **Steam Big Picture (gamescope)** session for a SteamOS-like couch experience
-- Minimal SDDM login screen (where-is-my-sddm-theme) to switch between them
-- Steam + Proton-GE, gamemode, gamescope, MangoHud, LACT, ananicy-cpp (CachyOS rules)
-- Apps: Firefox, Ungoogled Chromium, Claude Code, OpenCode, Faugus Launcher, ProtonUp-Qt, ProtonPlus, Heroic, Lutris, Celluloid + mpv, Fedora Media Writer, OBS
-- Flatpak + Flathub with the Bazaar store
-- Full media codecs (ffmpeg, GStreamer) and non-free firmware
-- Jellyfin media server, libraries on the external PSSD T7 drive
-- Windscribe VPN desktop app (via windscribe-nixos)
-- USB/external drives automount (udisks2 + udiskie in niri; Plasma native)
+- **Steam Big Picture in SteamOS mode** (Steam Deck UI on gamescope, via
+  [Jovian-NixOS](https://jovian-experiments.github.io/Jovian-NixOS/)). Always the default.
+- **KDE Plasma Bigscreen** as the second environment. "Switch to Desktop" in Steam opens it.
+- **Touch login screen** (SDDM, on-screen keyboard) at every boot to pick between the two.
+- **Update System**: a one-tap updater with a big progress dialog. In Plasma Bigscreen it is an
+  app; in Steam it is a shortcut in the library (added automatically once you have signed in).
+- Hardware: newest kernel (Go S controller drivers), InputPlumber for controllers / back buttons /
+  gyro, Bluetooth, Wi-Fi 7 and audio firmware, power profiles, LVFS firmware updates, automount
+  for SD cards and USB drives.
+- Apps: Firefox, Heroic, Lutris, Faugus Launcher, ProtonUp-Qt, MangoHud, Proton-GE.
 
 ## Layout
 ```
-flake.nix                 inputs: nixpkgs-unstable, home-manager, noctalia
-hosts/gaming-pc/          host settings (+ hardware-configuration.nix you generate)
-modules/                  base, amd, desktop, gaming, apps
-home/                     home-manager: niri config, udiskie
+flake.nix                  inputs: nixpkgs-unstable, jovian
+hosts/legion-go-s/         host settings (+ hardware-configuration.nix generated at install)
+modules/base.nix           nix, boot, networking, audio, git
+modules/hardware.nix       Legion Go S hardware support
+modules/desktop.nix        touch login screen + Steam / Plasma Bigscreen sessions
+modules/gaming.nix         Steam Deck UI (Jovian), Proton-GE, automount
+modules/apps.nix           apps
+modules/update.nix         "Update System" app, updater service, Steam shortcuts
 ```
 
-## Install
-From the NixOS installer (after partitioning & mounting at /mnt):
+## Updating
+Tap **Update System** (Steam library or the Bigscreen app list). Or from a terminal:
 ```bash
-git clone https://github.com/hjcoggan/hjcoggan-nix /mnt/etc/nixos
-nixos-generate-config --root /mnt --show-hardware-config > /mnt/etc/nixos/hosts/gaming-pc/hardware-configuration.nix
-cd /mnt/etc/nixos && git add -A
-nixos-install --flake .#gaming-pc
+sudo systemctl start hjc-update.service   # fetch settings + packages, install for next boot
 ```
-
-## Rebuild
+The config lives in `/etc/nixos` (owned by the user). To change it by hand, edit there, then:
 ```bash
-sudo nixos-rebuild switch --flake ~/hjcoggan-nix#gaming-pc
+sudo nixos-rebuild switch --flake /etc/nixos#legion-go-s
 ```

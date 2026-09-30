@@ -1,19 +1,15 @@
-{ pkgs, inputs, ... }:
+{ pkgs, ... }:
 
 {
-  # Makes pkgs.claude-code the one from sadjow/claude-code-nix instead of nixpkgs'
-  nixpkgs.overlays = [ inputs.claude-code.overlays.default ];
-
   programs.firefox.enable = true;
-  programs.partition-manager.enable = true; # KDE Partition Manager (+ its privileged helper)
+  # Smooth touch scrolling when Firefox runs under X11 (e.g. inside the Steam session)
+  environment.sessionVariables.MOZ_USE_XINPUT2 = "1";
 
   environment.systemPackages = with pkgs; [
-    claude-code       # Claude Code (from claude-code-nix; log in with your Claude subscription)
-    faugus-launcher
-    protonup-qt
-    heroic
-    fastfetch
-    gnome-text-editor # simple GUI text editor (Kate also comes with Plasma)
-    rpi-imager        # Raspberry Pi Imager
+    heroic # Epic / GOG / Amazon games
+    lutris # everything else (Battle.net, EA, emulators...)
+    faugus-launcher # Proton launcher for non-Steam Windows games
+    protonup-qt # install and update Proton-GE and Wine builds
+    mangohud # FPS / battery overlay for games (Jovian's patched build)
   ];
 }

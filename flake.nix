@@ -1,45 +1,24 @@
 {
-  description = "hjcoggan's NixOS gaming PC (Ryzen 7 7700 + Radeon RX 9070 XT)";
+  description = "Touch-friendly, SteamOS-like NixOS for the Lenovo Legion Go S (Ryzen Z2 Go)";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-    home-manager = {
-      url = "github:nix-community/home-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    # No `follows` on purpose: uses its own pinned nixpkgs so it matches the
-    # maintainer's binary cache and only rebuilds when Windscribe itself updates.
-    windscribe-nixos.url = "github:Varmisanth/windscribe-nixos";
-
-    # Claude Code from its own flake: updated within about a day of each release, while
-    # nixpkgs lags a few days. Update just this with: nix flake update claude-code
-    claude-code = {
-      url = "github:sadjow/claude-code-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    noctalia = {
-      url = "github:noctalia-dev/noctalia";
+    # Steam Deck UI (gamescope session, steamos-manager, InputPlumber, power button handling...)
+    # on generic hardware. Its modules and overlay build against *our* nixpkgs.
+    jovian = {
+      url = "github:Jovian-Experiments/Jovian-NixOS";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
-  outputs = { self, nixpkgs, home-manager, ... }@inputs: {
-    nixosConfigurations.gaming-pc = nixpkgs.lib.nixosSystem {
+  outputs = { self, nixpkgs, jovian, ... }@inputs: {
+    nixosConfigurations.legion-go-s = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       specialArgs = { inherit inputs; };
       modules = [
-        ./hosts/gaming-pc
-        home-manager.nixosModules.home-manager
-        {
-          home-manager.useGlobalPkgs = true;
-          home-manager.useUserPackages = true;
-          home-manager.backupFileExtension = "hm-bak";
-          home-manager.extraSpecialArgs = { inherit inputs; };
-          home-manager.users.heath = import ./home;
-        }
+        jovian.nixosModules.default
+        ./hosts/legion-go-s
       ];
     };
   };
