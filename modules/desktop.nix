@@ -1,14 +1,13 @@
 { pkgs, lib, ... }:
 
 # Boots into a touch-friendly session picker (no login screen, no password): Steam, Plasma or
-# Plasma Bigscreen. SDDM auto logs in to the picker session; tapping a choice makes SDDM restart
-# straight into that session. Jovian's autoStart (gaming.nix) still handles the Steam session and
-# the in-Steam "Switch to Desktop" (regular Plasma) / "Return to Gaming Mode" switching.
+# Plasma Bigscreen. SDDM auto logs in to the picker session; tapping a choice makes the picker
+# session itself become the chosen session (it execs it), so no sudo or SDDM restart is involved.
+# Jovian's autoStart (gaming.nix) still handles the Steam session and the in-Steam
+# "Switch to Desktop" (regular Plasma) / "Return to Gaming Mode" switching.
 let
   bigscreen = pkgs.kdePackages.plasma-bigscreen;
   workspace = pkgs.kdePackages.plasma-workspace;
-  user = "heath";
-  conf = "/etc/sddm.conf.d/zzt-hjc-session.conf";
 
   returnToGaming = pkgs.makeDesktopItem {
     name = "return-to-gaming-mode";
@@ -18,20 +17,6 @@ let
     icon = "steam";
     categories = [ "System" ];
   };
-
-  # Runs as root (via sudo, no password). "clear" removes the one-shot choice; anything else is
-  # written as SDDM's autologin session and SDDM is restarted into it.
-  selectSession = pkgs.writeShellScriptBin "hjc-select-session" ''
-    case "$1" in
-      clear) rm -f ${conf}; exit 0 ;;
-      gamescope-wayland|plasma|plasma-bigscreen-safe) ;;
-      *) echo "unknown session: $1" >&2; exit 1 ;;
-    esac
-    mkdir -p /etc/sddm.conf.d
-    printf '[Autologin]\nUser=${user}\nSession=%s.desktop\nRelogin=true\n' "$1" > ${conf}
-    ${pkgs.systemd}/bin/systemctl --no-block restart display-manager.service
-  '';
-  select = "/run/current-system/sw/bin/hjc-select-session";
 
   # Plasma Bigscreen session with absolute store paths. If Bigscreen dies within 20 seconds it
   # falls back to regular Plasma.
@@ -47,7 +32,8 @@ let
     exit $rc
   '';
 
-  # The picker UI: three big touch buttons in a kiosk compositor (cage).
+  # The picker UI: three big touch buttons in a kiosk compositor (cage). It only records which
+  # button was pressed (yad's exit code); the outer script acts on it once cage has exited.
   pickerInner = pkgs.writeShellScript "hjc-session-picker-inner" ''
     export XDG_CONFIG_HOME=$(mktemp -d)
     mkdir -p $XDG_CONFIG_HOME/gtk-3.0
@@ -59,20 +45,29 @@ let
       --text-align=center --buttons-layout=spread \
       --text='<span size="xx-large">What do you want to launch?</span>' \
       --button="Steam:10" --button="Plasma Desktop:11" --button="Plasma Bigscreen:12"
-    case $? in
-      11) s=plasma ;;
-      12) s=plasma-bigscreen-safe ;;
-      *) s=gamescope-wayland ;;
-    esac
-    touch "$XDG_RUNTIME_DIR/hjc-picked"
-    exec /run/wrappers/bin/sudo ${select} $s
+    echo $? > "$XDG_RUNTIME_DIR/hjc-choice"
   '';
 
   pickerScript = pkgs.writeShellScript "hjc-session-picker" ''
-    rm -f "$XDG_RUNTIME_DIR/hjc-picked"
+    rm -f "$XDG_RUNTIME_DIR/hjc-choice"
     ${pkgs.cage}/bin/cage -ds -- ${pickerInner}
-    # Picker failed to start or was closed without a choice: fall back to Steam, never loop.
-    [ -e "$XDG_RUNTIME_DIR/hjc-picked" ] || /run/wrappers/bin/sudo ${select} gamescope-wayland
+    choice=$(cat "$XDG_RUNTIME_DIR/hjc-choice" 2>/dev/null || echo 10)
+    rm -f "$XDG_RUNTIME_DIR/hjc-choice"
+
+    case "$choice" in
+      11) exec ${workspace}/libexec/plasma-dbus-run-session-if-needed ${workspace}/bin/startplasma-wayland ;;
+      12) exec ${bigscreenSessionScript} ;;
+    esac
+
+    # Steam: run the same command SDDM would run for the Steam session.
+    d=/run/current-system/sw/share/wayland-sessions/gamescope-wayland.desktop
+    if [ -r "$d" ]; then
+      cmd=$(${pkgs.gnused}/bin/sed -n 's/^Exec=//p' "$d" | head -n1)
+      [ -n "$cmd" ] && exec sh -c "$cmd"
+    fi
+    # Fallback: ask steamos-manager to switch (what "Return to Gaming Mode" does).
+    [ -n "$DBUS_SESSION_BUS_ADDRESS" ] || export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
+    exec ${pkgs.steamos-manager}/bin/steamosctl switch-to-game-mode
   '';
 
   mkSession = name: label: script: pkgs.runCommand "${name}-session"
@@ -103,26 +98,7 @@ in
   environment.systemPackages = [
     bigscreen
     returnToGaming
-    selectSession
   ];
-
-  security.sudo.extraRules = [{
-    users = [ user ];
-    commands = [{ command = select; options = [ "NOPASSWD" ]; }];
-  }];
-
-  # The one-shot choice must never stick: clear it at boot and as soon as the chosen session is up.
-  systemd.services.hjc-session-clear = {
-    description = "Clear one-shot session choice";
-    before = [ "display-manager.service" ];
-    wantedBy = [ "display-manager.service" ];
-    serviceConfig = { Type = "oneshot"; ExecStart = "${selectSession}/bin/hjc-select-session clear"; };
-  };
-  systemd.user.services.hjc-session-clear = {
-    description = "Clear one-shot session choice";
-    wantedBy = [ "graphical-session.target" ];
-    serviceConfig = { Type = "oneshot"; ExecStart = "/run/wrappers/bin/sudo ${select} clear"; };
-  };
 
   xdg.portal.enable = true;
 }
