@@ -6,13 +6,13 @@
 {
   jovian.steam = {
     enable = true;
-    # Boot straight into Steam (automatic login, no password) and enable Jovian's session
-    # switching ("Switch to Desktop" inside Steam).
+    # Automatic login (no password) and Jovian's session switching ("Switch to Desktop" inside
+    # Steam). Boot lands on the session picker (desktop.nix), which can start Steam.
     autoStart = true;
     user = "heath";
-    # "Switch to Desktop" in Steam's power menu opens Plasma Bigscreen (session defined in
-    # desktop.nix; it falls back to regular Plasma if Bigscreen fails to start).
-    desktopSession = "plasma-bigscreen-safe";
+    # "Switch to Desktop" in Steam's power menu opens regular Plasma. Plasma Bigscreen is
+    # available from the session picker.
+    desktopSession = "plasma";
   };
 
   # Jovian's SD card rules are for the Deck. udiskie (below) mounts every removable drive the
@@ -26,7 +26,7 @@
 
   programs.gamemode.enable = true;
 
-  # Automount SD cards and USB drives, in the Steam session and in Plasma Bigscreen.
+  # Automount SD cards and USB drives, in the Steam session and in Plasma.
   services.udisks2.enable = true;
   systemd.user.services.udiskie = {
     description = "Automount removable drives";
