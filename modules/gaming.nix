@@ -10,8 +10,9 @@
     # switching ("Switch to Desktop" inside Steam).
     autoStart = true;
     user = "heath";
-    # "Switch to Desktop" in Steam's power menu opens Plasma Bigscreen.
-    desktopSession = "plasma-bigscreen-wayland";
+    # "Switch to Desktop" in Steam's power menu opens Plasma Bigscreen (session defined in
+    # desktop.nix; it falls back to regular Plasma if Bigscreen fails to start).
+    desktopSession = "plasma-bigscreen-safe";
   };
 
   # Jovian's SD card rules are for the Deck. udiskie (below) mounts every removable drive the
