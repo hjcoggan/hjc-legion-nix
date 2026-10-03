@@ -17,6 +17,9 @@ fi
 
 export NIX_CONFIG="experimental-features = nix-command flakes"
 
+# Stop userspace OOM killers (systemd-oomd / earlyoom) from killing the terminal.
+systemctl stop systemd-oomd earlyoom 2>/dev/null || true
+
 # --- Network ---------------------------------------------------------------
 if ! curl -fsS --max-time 8 -o /dev/null https://github.com; then
   echo "No internet. Connect first (e.g. run 'nmtui'), then re-run this script."; exit 1
@@ -77,6 +80,20 @@ mount -o "$OPTS,subvol=@nix"  "$ROOT" /mnt/nix
 mount -o "$OPTS,subvol=@log"  "$ROOT" /mnt/var/log
 mount -o umask=0077 "$BOOT" /mnt/boot
 
+# --- Low-RAM protection ----------------------------------------------------
+# The live ISO keeps / and /tmp in RAM. Put swap, temp files and nix caches on
+# the target disk instead, and keep builds from running too many jobs at once.
+SWAPFILE=/mnt/.install-swap
+btrfs filesystem mkswapfile --size 16g "$SWAPFILE"
+swapon "$SWAPFILE"
+
+mkdir -p /mnt/var/tmp/install-tmp /mnt/var/tmp/install-cache
+export TMPDIR=/mnt/var/tmp/install-tmp
+export XDG_CACHE_HOME=/mnt/var/tmp/install-cache
+export NIX_CONFIG="experimental-features = nix-command flakes
+max-jobs = 2
+cores = 4"
+
 # --- Config ----------------------------------------------------------------
 mkdir -p /mnt/etc
 if command -v git >/dev/null; then
@@ -103,6 +120,10 @@ nixos-install --flake "/mnt/etc/nixos#$HOST" --no-root-passwd
 echo "$USER_NAME:$PW1" | nixos-enter --root /mnt -c chpasswd
 # /etc/nixos is meant to be owned by the user (uid 1000, group users)
 chown -R 1000:100 /mnt/etc/nixos
+
+# Clean up the temporary install swap and scratch dirs
+swapoff "$SWAPFILE" 2>/dev/null || true
+rm -rf "$SWAPFILE" /mnt/var/tmp/install-tmp /mnt/var/tmp/install-cache
 
 echo
 echo "Done. Remove the USB and run: reboot"
