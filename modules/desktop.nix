@@ -18,18 +18,15 @@ let
     categories = [ "System" ];
   };
 
-  # Plasma Bigscreen session with absolute store paths. If Bigscreen dies within 20 seconds it
-  # falls back to regular Plasma.
+  # Plasma Bigscreen session using Plasma 6 shell variable
   bigscreenSessionScript = pkgs.writeShellScript "plasma-bigscreen-safe" ''
     export PATH=${bigscreen}/bin:${workspace}/bin:$PATH
-    start=$(date +%s)
-    ${workspace}/libexec/plasma-dbus-run-session-if-needed ${bigscreen}/bin/plasma-bigscreen-wayland
-    rc=$?
-    if [ "$rc" -ne 0 ] && [ $(( $(date +%s) - start )) -lt 20 ]; then
-      echo "Plasma Bigscreen exited with $rc; falling back to Plasma" | ${pkgs.systemd}/bin/systemd-cat -t bigscreen-session -p err
-      exec ${workspace}/libexec/plasma-dbus-run-session-if-needed ${workspace}/bin/startplasma-wayland
-    fi
-    exit $rc
+    export PLASMA_INTEGRATION_USE_PORTAL=1
+    export PLASMA_PLATFORM=mediacenter
+    export QT_FILE_SELECTORS=mediacenter
+    export PLASMA_DEFAULT_SHELL=org.kde.plasma.bigscreen
+    export KWIN_IM_SHOW_ALWAYS=1
+    exec ${workspace}/libexec/plasma-dbus-run-session-if-needed ${workspace}/bin/startplasma-wayland
   '';
 
   # The picker UI: three big touch buttons in a kiosk compositor (cage). It only records which
@@ -57,17 +54,8 @@ let
     case "$choice" in
       11) exec ${workspace}/libexec/plasma-dbus-run-session-if-needed ${workspace}/bin/startplasma-wayland ;;
       12) exec ${bigscreenSessionScript} ;;
+      *)  exec ${pkgs.gamescope-session}/bin/start-gamescope-session ;;
     esac
-
-    # Steam: run the same command SDDM would run for the Steam session.
-    d=/run/current-system/sw/share/wayland-sessions/gamescope-wayland.desktop
-    if [ -r "$d" ]; then
-      cmd=$(${pkgs.gnused}/bin/sed -n 's/^Exec=//p' "$d" | head -n1)
-      [ -n "$cmd" ] && exec sh -c "$cmd"
-    fi
-    # Fallback: ask steamos-manager to switch (what "Return to Gaming Mode" does).
-    [ -n "$DBUS_SESSION_BUS_ADDRESS" ] || export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
-    exec ${pkgs.steamos-manager}/bin/steamosctl switch-to-game-mode
   '';
 
   mkSession = name: label: script: pkgs.runCommand "${name}-session"
