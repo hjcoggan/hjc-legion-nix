@@ -30,6 +30,18 @@ let
     export QT_FILE_SELECTORS=mediacenter
     export PLASMA_DEFAULT_SHELL=org.kde.plasma.bigscreen
     export KWIN_IM_SHOW_ALWAYS=1
+
+    # Start Bigscreen's gamepad and remote input daemon in the background
+    (
+      for i in $(seq 1 30); do
+        [ -S "$XDG_RUNTIME_DIR/wayland-0" ] && break
+        sleep 0.5
+      done
+      sleep 1
+      export WAYLAND_DISPLAY=wayland-0
+      exec ${bigscreen}/bin/plasma-bigscreen-inputhandler
+    ) &
+
     exec ${workspace}/libexec/plasma-dbus-run-session-if-needed ${workspace}/bin/startplasma-wayland
   '';
 
@@ -87,6 +99,17 @@ in
     QML2_IMPORT_PATH = [ "/lib/qt-6/qml" ];
     QML_IMPORT_PATH = [ "/lib/qt-6/qml" ];
   };
+
+  # Autostart the Bigscreen gamepad daemon when running in mediacenter mode
+  environment.etc."xdg/autostart/org.kde.plasma.bigscreen.inputhandler.desktop".text = ''
+    [Desktop Entry]
+    Name=Plasma Bigscreen Input Handler
+    Exec=${bigscreen}/bin/plasma-bigscreen-inputhandler
+    Icon=gamepad
+    Type=Application
+    NoDisplay=true
+    OnlyShowIn=KDE;
+  '';
 
   services.displayManager.sessionPackages = [
     (mkSession "plasma-bigscreen-safe" "Plasma Bigscreen" bigscreenSessionScript)

@@ -29,9 +29,32 @@
   services.power-profiles-daemon.enable = true;
   services.fwupd.enable = true;
 
-  # Controllers, gyro and back buttons are handled by InputPlumber (enabled by Jovian, gaming.nix),
-  # the same stack SteamOS uses on this device. Don't add handheld-daemon (hhd) next to it:
-  # two controller managers fight over the same devices.
+  # Controllers, gyro and back buttons:
+  # InputPlumber (enabled by Jovian) provides the SteamOS-compatible composite controller.
+  # We install its udev rules, configure uinput access, and add the Legion Go S xpad/XInput handshake.
+  hardware.uinput.enable = true;
 
-  environment.systemPackages = with pkgs; [ vulkan-tools ];
+  services.udev.packages = [
+    pkgs.inputplumber
+    pkgs.kdePackages.plasma-bigscreen
+  ];
+
+  services.udev.extraRules = ''
+    # Lenovo Legion Go S (1a86:e310 / 1a86:e311) controller handshake
+    # Bind xpad fallback for Legion Go S so it exposes a standard Xbox controller to SDL/evdev
+    ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="1a86", ATTR{idProduct}=="e31[01]", RUN+="${pkgs.kmod}/bin/modprobe xpad", RUN+="${pkgs.bash}/bin/sh -c 'echo 1a86 $attr{idProduct} > /sys/bus/usb/drivers/xpad/new_id 2>/dev/null || true'"
+
+    # Switch gamepad mode to xinput on device add/change
+    ACTION=="add|change|bind", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="e31[01]", SUBSYSTEM=="hid", ATTR{gamepad/mode}="xinput", ATTR{os_mode}="linux"
+
+    # User access for hidraw, uinput, and input event nodes
+    KERNEL=="hidraw*", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="e31[01]", MODE="0660", TAG+="uaccess"
+    KERNEL=="uinput", SUBSYSTEM=="misc", MODE="0660", TAG+="uaccess", OPTIONS+="static_node=uinput"
+    SUBSYSTEM=="input", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="e31[01]", TAG+="uaccess"
+  '';
+
+  environment.systemPackages = with pkgs; [
+    vulkan-tools
+    evtest
+  ];
 }

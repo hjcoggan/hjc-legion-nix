@@ -18,7 +18,7 @@
   users.users.heath = {
     isNormalUser = true;
     description = "Heath";
-    extraGroups = [ "wheel" "networkmanager" "video" "audio" "input" ];
+    extraGroups = [ "wheel" "networkmanager" "video" "audio" "input" "uinput" ];
   };
 
   # btrfs subvolumes (@, @home, @nix, @log). These options merge with hardware-configuration.nix.
