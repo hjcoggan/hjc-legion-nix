@@ -8,6 +8,7 @@
 let
   bigscreen = pkgs.kdePackages.plasma-bigscreen;
   workspace = pkgs.kdePackages.plasma-workspace;
+  kdeconnect = pkgs.kdePackages.kdeconnect-kde;
 
   returnToGaming = pkgs.makeDesktopItem {
     name = "return-to-gaming-mode";
@@ -18,9 +19,12 @@ let
     categories = [ "System" ];
   };
 
-  # Plasma Bigscreen session using Plasma 6 shell variable
+  # Plasma Bigscreen session using Plasma 6 shell variable and explicit QML import paths
   bigscreenSessionScript = pkgs.writeShellScript "plasma-bigscreen-safe" ''
-    export PATH=${bigscreen}/bin:${workspace}/bin:$PATH
+    export PATH=${bigscreen}/bin:${workspace}/bin:${kdeconnect}/bin:$PATH
+    export QML2_IMPORT_PATH="${bigscreen}/lib/qt-6/qml:${kdeconnect}/lib/qt-6/qml:${workspace}/lib/qt-6/qml:''${QML2_IMPORT_PATH:-}"
+    export QML_IMPORT_PATH="${bigscreen}/lib/qt-6/qml:${kdeconnect}/lib/qt-6/qml:${workspace}/lib/qt-6/qml:''${QML_IMPORT_PATH:-}"
+    export QT_PLUGIN_PATH="${bigscreen}/lib/qt-6/plugins:${kdeconnect}/lib/qt-6/plugins:${workspace}/lib/qt-6/plugins:''${QT_PLUGIN_PATH:-}"
     export PLASMA_INTEGRATION_USE_PORTAL=1
     export PLASMA_PLATFORM=mediacenter
     export QT_FILE_SELECTORS=mediacenter
@@ -75,6 +79,15 @@ in
   # Plasma 6 provides regular Plasma (session "plasma") and the workspace Bigscreen is built on.
   services.desktopManager.plasma6.enable = true;
 
+  # Bigscreen indicators require KDE Connect (org.kde.kdeconnect QML module).
+  programs.kdeconnect.enable = true;
+
+  environment.pathsToLink = [ "/lib/qt-6/qml" ];
+  environment.profileRelativeSessionVariables = {
+    QML2_IMPORT_PATH = [ "/lib/qt-6/qml" ];
+    QML_IMPORT_PATH = [ "/lib/qt-6/qml" ];
+  };
+
   services.displayManager.sessionPackages = [
     (mkSession "plasma-bigscreen-safe" "Plasma Bigscreen" bigscreenSessionScript)
     (mkSession "hjc-session-picker" "Session Picker" pickerScript)
@@ -85,6 +98,7 @@ in
 
   environment.systemPackages = [
     bigscreen
+    kdeconnect
     returnToGaming
   ];
 
